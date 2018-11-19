@@ -19,8 +19,9 @@ FIRST TASK PARAMETERS
 const TNum INTERVAL_BEGIN = 1.;
 const TNum INTERVAL_END = 2.;
 const TNum INTERVAL_DIFF = INTERVAL_END - INTERVAL_BEGIN;
-const TNum y1_first = 1 + exp(.5);
-const TNum z1_first = 2 * exp(.5) - 1;
+const TNum y1_first = 1. + exp(.5);
+//const TNum z1_first = 2. * exp(.5) - 1.;
+const TNum z1_first = -1;
 const size_t ORDER = 4;
 //const string SPACE = "\t\t";
 
@@ -31,7 +32,16 @@ TNum func_g_first(TNum x, TNum y, TNum z) {
 	return 0*x + 0*y + z;
 }
 TNum func_first_check(TNum x) {
-	return (1 + exp(.5*x)) / x;
+	return (1 + exp(.5*x*x)) / x;
+}
+
+TNum Round(TNum num, size_t signs) {
+	size_t tenSt = 1;
+	for (size_t i = 0; i < signs; i++) {
+		tenSt *= 10;
+	}
+	long long tmp = (long long) (num * (TNum) tenSt);
+	return (TNum) tmp / (TNum) tenSt;
 }
 
 /*
@@ -51,6 +61,9 @@ void EulerMethod(void) {
 	vector <TNum> y(size);
 	vector <TNum> z(size);
 	vector <TNum> check(size);
+	/*TNum xCurr = INTERVAL_BEGIN;
+	TNum yCurr = y1_first;
+	TNum zCurr = z1_first;*/
 	x[0] = INTERVAL_BEGIN;
 	y[0] = y1_first;
 	z[0] = z1_first;
@@ -62,12 +75,12 @@ void EulerMethod(void) {
 	y_runge[0] = y[0];
 	z_runge[0] = z[0];
 	runge_res[0] = 0.;
-	cout << "x\t|y\t|z\t|f(xyz)\t|y_r\t|z_r\t|runge\t|y check" << endl; 
+	cout << "x\t|y\t|z\t|y_r\t|z_r\t|runge\t|y check" << endl;
 
 	for (size_t i = 1; i < size; i++) {
 		x[i] = x[i - 1] + step;
 		z[i] = z[i - 1] + step * func_f_first(x[i - 1], y[i - 1], z[i - 1]);
-		y[i] = y[i - 1] + step * z[i - 1];
+		y[i] = y[i - 1] + step * z[i];
 		
 		check[i] = func_first_check(x[i]);
 	}
@@ -77,19 +90,20 @@ void EulerMethod(void) {
 		runge_res[i] = (y[2*i] - y_runge[i]) / (pow(2, ORDER) - 1);
 	}
 	for (size_t i = 0; i < size; i++) {
-		cout << x[i] << "\t|";
-		cout << y[i] << "\t|";
-		cout << z[i] << "\t|";
-		cout << func_f_first(x[i], y[i], z[i]) << "\t|";
+		cout << Round(x[i], 2) << "\t|";
+		cout << Round(y[i], 2) << "\t|";
+		cout << Round(z[i], 2) << "\t|";
+		//cout << func_f_first(x[i], y[i], z[i]) << "\t|";
 		if (i % 2 != 0) {
 			cout << "---\t|---\t|---\t|";
 		} else {
-			cout << y_runge[i / 2] << "\t|";
-			cout << z_runge[i / 2] << "\t|";
-			cout << runge_res[i / 2] << "\t|";
+			cout << Round(y_runge[i / 2], 2) << "\t|";
+			cout << Round(z_runge[i / 2], 2) << "\t|";
+			cout << Round(runge_res[i / 2], 2) << "\t|";
 		}
 		cout << check[i] << endl;
 	}
+	cout << "Epsilon = " << abs(y[size - 1] - check[size - 1]) << endl;
 }
 
 void RungeKuttMethod(void) {
@@ -113,15 +127,17 @@ void RungeKuttMethod(void) {
 	y[0] = y1_first;
 	z[0] = z1_first;
 
+	check[0] = func_first_check(x[0]);
+
 	for (size_t i = 0; i < size - 1; i++) {
-		k[i][0] = step * func_f_first(x[i], y[i], z[i]);
-		l[i][0] = step * func_g_first(x[i], y[i], z[i]);
-		k[i][1] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
-		l[i][1] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
-		k[i][2] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
-		l[i][2] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
-		k[i][3] = step * func_f_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
-		l[i][3] = step * func_g_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
+		l[i][0] = step * func_f_first(x[i], y[i], z[i]);
+		k[i][0] = step * func_g_first(x[i], y[i], z[i]);
+		l[i][1] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
+		k[i][1] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
+		l[i][2] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
+		k[i][2] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
+		l[i][3] = step * func_f_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
+		k[i][3] = step * func_g_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
 		theta[i][0] = abs((k[i][1] - k[i][2]) / (k[i][0] - k[i][1]));
 		theta[i][1] = abs((l[i][1] - l[i][2]) / (l[i][0] - l[i][1]));
 
@@ -130,16 +146,17 @@ void RungeKuttMethod(void) {
 		x[i + 1] = x[i] + step;
 		y[i + 1] = y[i] + dy[i];
 		z[i + 1] = z[i] + dz[i];
-		check[i] = func_first_check(x[i]);
+		check[i + 1] = func_first_check(x[i + 1]);
 	}
 	cout << "x\t|y\t|z\t|theta\t|check" << endl;
-	for (size_t i = 0; i < size - 1; i++) {
-		cout << x[i] << "\t|";
-		cout << y[i] << "\t|";
-		cout << z[i] << "\t|";
-		cout << theta[i][0] << "\t|";
+	for (size_t i = 0; i < size; i++) {
+		cout << Round(x[i], 2) << "\t|";
+		cout << Round(y[i], 2) << "\t|";
+		cout << Round(z[i], 2) << "\t|";
+		cout << Round(theta[i][0], 2) << "\t|";
 		cout << check[i] << endl;
 	}
+	cout << "Epsilon = " << abs(y[size - 1] - check[size - 1]) << endl;
 
 }
 
@@ -164,16 +181,18 @@ void AdamsMethod(void) {
 	y[0] = y1_first;
 	z[0] = z1_first;
 
+	check[0] = func_first_check(x[0]);
+
 	size_t i;
 	for (i = 0; i < min((size_t) 3, size - 1); i++) {
-		k[i][0] = step * func_f_first(x[i], y[i], z[i]);
-		l[i][0] = step * func_g_first(x[i], y[i], z[i]);
-		k[i][1] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
-		l[i][1] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
-		k[i][2] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
-		l[i][2] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
-		k[i][3] = step * func_f_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
-		l[i][3] = step * func_g_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
+		l[i][0] = step * func_f_first(x[i], y[i], z[i]);
+		k[i][0] = step * func_g_first(x[i], y[i], z[i]);
+		l[i][1] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
+		k[i][1] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][0], z[i] + .5 * l[i][0]);
+		l[i][2] = step * func_f_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
+		k[i][2] = step * func_g_first(x[i] + .5 * step, y[i] + .5 * k[i][1], z[i] + .5 * l[i][1]);
+		l[i][3] = step * func_f_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
+		k[i][3] = step * func_g_first(x[i] + step, y[i] + k[i][2], z[i] + k[i][2]);
 		theta[i][0] = abs((k[i][1] - k[i][2]) / (k[i][0] - k[i][1]));
 		theta[i][1] = abs((l[i][1] - l[i][2]) / (l[i][0] - l[i][1]));
 
@@ -182,7 +201,7 @@ void AdamsMethod(void) {
 		x[i + 1] = x[i] + step;
 		y[i + 1] = y[i] + dy[i];
 		z[i + 1] = z[i] + dz[i];
-		check[i] = func_first_check(x[i]);
+		check[i + 1] = func_first_check(x[i + 1]);
 	}
 	for (; i < size - 1; i++) {
 		x[i + 1] = x[i] + step;
@@ -202,13 +221,14 @@ void AdamsMethod(void) {
 			)) / 24.;
 	}
 	cout << "x\t|y\t|z\t|check" << endl;
-	for (i = 0; i < size - 1; i++) {
+	for (i = 0; i < size; i++) {
 		check[i] = func_first_check(x[i]);
-		cout << x[i] << "\t|";
-		cout << y[i] << "\t|";
-		cout << z[i] << "\t|";
+		cout << Round(x[i], 2) << "\t|";
+		cout << Round(y[i], 2) << "\t|";
+		cout << Round(z[i], 2) << "\t|";
 		cout << check[i] << endl;
 	}
+	cout << "Epsilon = " << abs(y[size - 1] - check[size - 1]) << endl;
 }
 
 
@@ -221,7 +241,7 @@ MAIN
 */
 
 int main(void) {
-	cout.precision(2);
+	//cout.precision(2);
 	cout << "=================" << endl;
 	cout << "Выберите задание:" << endl;
 	cout << "1 - Метод Эйлера" << endl;
