@@ -45,8 +45,8 @@ SECOND TASK PARAMETERS
 const TNum y1_second = 1. + 4.*log(2.);
 const TNum yn_second = -1. + 3.*log(2.);
 
-const TNum ALPHA[2] = {1, 1};
-const TNum BETA[2] = {0, 0};
+const TNum ALPHA[2] = {1.2, 1.3};
+const TNum BETA[2] = {1.2, 1.2};
 
 TNum func_f_second(TNum x, TNum y, TNum z) {
 	return (2. * y) / (x*x * (x + 1));
@@ -156,6 +156,8 @@ void EulerMethod(void) {
 		}
 		cout << check[i] << endl;
 	}
+	cout << "Total = " << y[size - 1] << endl;
+	cout << "Check = " << check[size - 1] << endl;
 	cout << "Epsilon = " << abs(y[size - 1] - check[size - 1]) << endl;
 }
 
@@ -231,6 +233,8 @@ void RungeKuttMethod(void) {
 		cout << Round(theta[i][0], 2) << "\t|";
 		cout << check[i] << endl;
 	}
+	cout << "Total = " << y[size - 1] << endl;
+	cout << "Check = " << check[size - 1] << endl;
 	cout << "Epsilon = " << abs(y[size - 1] - check[size - 1]) << endl;
 
 }
@@ -279,6 +283,8 @@ void AdamsMethod(void) {
 		cout << Round(z[i], 2) << "\t|";
 		cout << check[i] << endl;
 	}
+	cout << "Total = " << y[size - 1] << endl;
+	cout << "Check = " << check[size - 1] << endl;
 	cout << "Epsilon = " << abs(y[size - 1] - check[size - 1]) << endl;
 }
 
@@ -324,15 +330,11 @@ void ShootingMethod() {
 	
 
 	RungeKuttGetSolution(&func_f_second, &func_g_first, x, yPrev, z, theta,
-			INTERVAL_BEGIN, step, size, nPrev, (y1_second - ALPHA[0] * nPrev) / BETA[0]);
+			INTERVAL_BEGIN, step, size, (y1_second - ALPHA[0] * nPrev) / BETA[0], nPrev);
 	RungeKuttGetSolution(&func_f_second, &func_g_first, x, yCurr, z, theta,
-			INTERVAL_BEGIN, step, size, nCurr, (y1_second - ALPHA[0] * nCurr) / BETA[0]);
+			INTERVAL_BEGIN, step, size, (y1_second - ALPHA[0] * nCurr) / BETA[0], nCurr);
 
 	size_t cnt = 0;
-	//cout << abs(ALPHA[1] * yCurr[size - 1] +
-          //BETA[1] * derOne(x, yCurr, INTERVAL_END) - yn_second) << endl;
-	//cout << yCurr[size - 1] << endl
-	//cout << ;
 	while (abs(ALPHA[1] * yCurr[size - 1] +
           BETA[1] * derOne(x, yCurr, INTERVAL_END) - yn_second) > eps) {
 		TNum n = next(x, yCurr, yPrev, nCurr, nPrev, ALPHA[1], BETA[1]);
@@ -340,25 +342,45 @@ void ShootingMethod() {
 		nCurr = n;
 		yPrev = yCurr;
 		RungeKuttGetSolution(&func_f_second, &func_g_first, x, yCurr, z, theta,
-			INTERVAL_BEGIN, step, size, nCurr, (y1_second - ALPHA[0] * nCurr) / BETA[0]);
+			INTERVAL_BEGIN, step, size, (y1_second - ALPHA[0] * nCurr) / BETA[0], nCurr);
 		cnt++;
 	}
 	cout << cnt << endl;
 
-	cout << "x\t|y\t|z\t|theta\t|check" << endl;
+	/*TNum Fz0, dFz0, delta;
+	TVector x(size);
+	TVector y(size);
+	TVector z(size);
+	vector <TNum[2]> theta(size);
+	TNum nPrev = 1.;
+	TNum nCurr = .8;
+	
+
+	do {
+		RungeKuttGetSolution(&func_f_second, &func_g_first, x, y, z, theta,
+			INTERVAL_BEGIN, step, size, nPrev, y1_second);
+		Fz0 = yn_second - y[size - 1];
+		RungeKuttGetSolution(&func_f_second, &func_g_first, x, y, z, theta,
+			INTERVAL_BEGIN, step, size, nCurr, y1_second);
+		dFz0 = (y[size - 1] - yn_second - Fz0) / eps;
+		nCurr = nPrev + Fz0 / dFz0;
+		delta = fabs(nCurr - nPrev);
+
+		nPrev = nCurr;
+
+	} while (delta > eps);*/
+
+	cout << "x\t|y\t|check" << endl;
 	for (size_t i = 0; i < size; i++) {
 		cout << Round(x[i], 2) << "\t|";
 		cout << Round(yCurr[i], 2) << "\t|";
-		cout << Round(z[i], 2) << "\t|";
-		cout << Round(theta[i][0], 2) << "\t|";
 		cout << func_second_check(x[i]) << endl;
-		//cout << 0 << endl;
 	}
 	cout << "Epsilon = " << abs(yCurr[size - 1] - func_second_check(x[size - 1])) << endl;
 
 }
 
-void FiniteDifferenceMethod() {
+void FiniteDifferenceMethod() { //Not workable
 	TVector x(1, INTERVAL_BEGIN);
 	TVector a(0);
 	TVector b(0);
@@ -398,8 +420,8 @@ void FiniteDifferenceMethod() {
 	for (size_t i = 0; i < x.size(); i++) {
 		cout << Round(x[i], 2) << "\t|";
 		cout << Round(y[i], 2) << "\t|";
-		//cout << func_second_check(x[i]) << endl;
-		cout << 0 << endl;
+		cout << func_second_check(x[i]) << endl;
+		//cout << 0 << endl;
 	}
 	//cout << "Epsilon = " << abs(yCurr[size - 1] - func_second_check(x[size - 1])) << endl;
 }
@@ -421,7 +443,7 @@ int main(void) {
 	cout << "2 - Метод Рунге-Кутты" << endl;
 	cout << "3 - Метод Адамса" << endl;
 	cout << "4 - Метод стрельбы" << endl;
-	cout << "5 - Конечно-разностный метод" << endl;
+	cout << "5 - Конечно-разностный метод (в процессе разработки)" << endl;
 	cout << "=================" << endl;
 
 	cout << "Ваш выбор: ";
